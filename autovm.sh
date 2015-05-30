@@ -91,6 +91,11 @@ rm -f $vol/$uidtemp.*
 rm -f $www/$uidtemp.*
 
 # Domains to deploy already present ?
+# Loop to get each new domain name
+#  if name findend in virsh list --all then question
+#      if erasing 'y' then erase the domain
+#      if erasing 'n' then get out from the list
+#  if not continue
 for ((i=1;i<=$nb;i++)); do
 domain=$(echo $list | cut -d" " -f $i)
 if $(virsh list --all | grep -w "$domain" &> /dev/null); then
