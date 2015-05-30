@@ -18,7 +18,7 @@ list=$3
 # count domain in $list
 nb=$(echo $list | wc -w)
 # $uidtemp var : template uid
-uidtemp="gi-$(uuidgen | cut -d - -f 1)"
+uidtemp="tmp-$(uuidgen | cut -d - -f 1)"
 
 ## Options to configure (network and paths)
 ## Base scenario with libvirt Default network
@@ -28,8 +28,8 @@ bridge=virbr0
 bridgeip4=$(ip -4 address show $bridge | grep 'inet' | sed 's/.*inet \([0-9\.]\+\).*/\1/')
 # $vol var : path to domain images
 vol=/var/lib/libvirt/images
-# $www var : local path to template kickstart file
-www=/var/www/html/conf
+# $data var : local path to template kickstart file
+data=/var/www/html/conf
 # $conf var : http path to template kickstart file 
 conf=http://$bridgeip4/conf
 # $mirror var : http path to an installation mirror
@@ -65,30 +65,28 @@ mirror=http://$bridgeip4/repo
 ## via Ansible and deploy configurations and applications (native or container based as Docker)
 ##
 ## Source of this script : practice lab in Linux training classroom with a motived team
+## and inspired by the tools : https://github.com/fubralimited/CentOS-KVM-Image-Tools
 
 install_info ()
 {
-
 # Show install configuation 
-echo "+ Install configuration : $baseline"
-echo "+ Kickstart file method : $method"
+echo "+ baseline profile            : $baseline"
+echo "+ kickstart file method acces : $method"
 echo "+ $nb domains to create : $list"
-echo "+ Path to images : $vol"
-echo "+ FS path to kickstart file : $www"
+echo "+ path to images              : $vol"
+echo "+ data path to kickstart file : $data"
 echo "+ http path to kickstart file : $conf"
-echo "+ Mirroir des fichiers d'installation : $mirror"
-
+echo "+ http repo mirror            : $mirror"
 }
 
 dom_erase ()
 {
-
 # Template already present ? Probably not
 echo "Erasing template"
 virsh destroy $uidtemp 2> /dev/null
 virsh undefine $uidtemp 2> /dev/null
 rm -f $vol/$uidtemp.*
-rm -f $www/$uidtemp.*
+rm -f $data/$uidtemp.*
 
 # Domains to deploy already present ?
 # Loop to get each new domain name from list in argument : for each domain
@@ -104,7 +102,7 @@ if $(virsh list --all | grep -w "$domain" &> /dev/null); then
          then
                 /bin/virsh destroy $domain 2> /dev/null
                 /bin/virsh undefine $domain 2> /dev/null
-                rm -rf $vol/$domain.* 2> /dev/null
+                rm -f $vol/$domain*
         elif [ $answer = 'n' ]
          then
                 list=$(echo "$list" | sed "s/$domain//g")
@@ -116,15 +114,19 @@ if $(virsh list --all | grep -w "$domain" &> /dev/null); then
         fi
 fi
 done
-
 }
 
 temp_create ()
 {
+# Temporary domain to sysprep and clone
+# 1. ks_prep
+# 2. virt-install
+#   \-configuration
+#    \-installation
+# 3. sysprep
 
 ks_prep ()
 {
-
 ## Kickstart file preparation
 echo "Kickstart file preparation"
 
@@ -134,8 +136,8 @@ read -r -d '' packages <<- EOM
 wget
 EOM
 
-touch $www/$uidtemp.ks
-cat << EOF > $www/$uidtemp.ks 
+touch $data/$uidtemp.ks
+cat << EOF > $data/$uidtemp.ks 
 install
 reboot
 rootpw --plaintext testtest
@@ -171,20 +173,18 @@ sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_
 %end
 EOF
 
-chown apache:apache $www/$uidtemp.ks
-
+chown apache:apache $data/$uidtemp.ks
 }
 
 virt_install ()
 {
-
-installation ()
+configuration ()
 {
-
-playtemp ()
+installation ()
 {
 ## virt-install process installation via http following kickstart file config
 echo "Template \"$baseline\" domain installation is starting  ... "
+echo "virsh console $uidtemp - in an other terminal to see the installation log"
 nohup \
 /bin/virt-install \
 --virt-type kvm \
@@ -216,59 +216,64 @@ echo -e "\nTemplate is created ! "
 if [ $method = http ] ; then
 	extra="ks=$conf/$uidtemp.ks console=ttyS0,115200n8 serial"
 	init=""
-	playtemp
+	installation
 elif [ $method = local ] ; then
-        extra="console=ttyS0,115200n8 serial"
-	init="--initrd-inject=/$uidtemp.ks"
-	playtemp
+	extra="ks=$conf/$uidtemp.ks console=ttyS0,115200n8 serial"
+	init="--initrd-inject=/"$data/$uidtemp.ks
+	installation
 else
         exit
 fi
-
-
 }
 
 if [ $baseline = small ] ; then
-        size=8
-        format=qcow2
-        ram=1024
+      	size=8
+       	format=qcow2
+	ram=1024
         vcpus=1
-    installation
+	configuration
 elif [ $baseline = medium ] ; then
         size=16
         format=qcow2
         ram=2048
         vcpus=2
-    installation
+	configuration
 elif [ $baseline = large ] ; then
         size=32
         format=qcow2
         ram=4096
         vcpus=4
-    installation
+	configuration
 else
         exit
 fi
-
 }
 
-dom_erase
+sysprep ()
+{
+echo "Sysprep and disk optimization"
+# sysprep silent, comment '&> /dev/null' for details
+virt-sysprep --format=$format -a $vol/$uidtemp.$format &> /dev/null
+# make a virtual machine disk sparse
+virt-sparsify --check-tmpdir continue \
+--compress --convert qcow2 --format qcow2 \
+$vol/$uidtemp.$format $vol/$uidtemp-sparsified.$format
+# remove original image
+rm -rf $vol/$uidtemp.$format
+# rename sparsified
+mv $vol/$uidtemp-sparsified.$format $vol/$uidtemp.$format
+# set correct ownership for the VM image file
+chown qemu:qemu $vol/$uidtemp.$format
+sleep 5
+}
+
 ks_prep
 virt_install
-
+sysprep
 }
 
 clone ()
 {
-sysprep ()
-{
-## !!!
-virt-sysprep --format=$format -a $vol/$uidtemp.$format &> /dev/null
-}
-
-cloning ()
-{
-
 # cloning loop
 for domain in $list; do
 mac=$(printf '52:54:00:EF:%02X:%02X\n' $((RANDOM%256)) $((RANDOM%256)))
@@ -289,11 +294,6 @@ write-append /etc/sysconfig/network-scripts/ifcfg-eth0 "DHCP_HOSTNAME=$domain\nH
 write /etc/hostname "$domain\n"
 EOF
 done
-
-}
-
-sysprep
-cloning
 }
 
 dom_start ()
@@ -308,8 +308,8 @@ done
 temp_all_erase ()
 {
 
-echo "Destroy, undefine and erase temporary template domains"
-for tdom in $(virsh list --name --all | grep gi-.*); do 
+echo "Destroy, undefine and erase any temporary template domain"
+for tdom in $(virsh list --name --all | grep tmp-.*); do 
         virsh destroy $tdom 2> /dev/null
         virsh undefine $tdom
         rm -f $vol/$tdom*
@@ -319,6 +319,8 @@ done
 
 echo $(date +"%M:%S")
 install_info
+echo $(date +"%M:%S")
+dom_erase
 echo $(date +"%M:%S")
 temp_create
 echo $(date +"%M:%S")
