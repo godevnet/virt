@@ -44,11 +44,11 @@ echo "* Mirroir des fichiers d'installation : $mirror"
 temp_erase ()
 {
 
-echo "Erasing template""
+echo "Erasing template"
 virsh destroy $uidtemp 2> /dev/null
 virsh undefine $uidtemp 2> /dev/null
 rm -f $vol/$uidtemp.*
-$www/$uidtemp.ks
+rm -f $www/$uidtemp.*
 
 }
 
@@ -59,7 +59,7 @@ ks_prep ()
 {
 
 ## Kickstart file preparation
-echo "Kickstart file preparation  @core+SSH key LV 4G"
+echo "Kickstart file preparation : @core+SSH key+LV 4G"
 
 ##
 touch $www/$uidtemp.ks
@@ -109,7 +109,7 @@ installation ()
 {
 
 ## Template domain installation start ... 
-echo "Template \"$baseline\" domain installation start for $nb new domains ... ""
+echo "Template \"$baseline\" domain installation is starting  ... "
 ## virt-install process installation via http following kickstart file config
 nohup \
 /bin/virt-install \
@@ -145,7 +145,7 @@ break
 fi
 done
 
-echo -e "\nTemplate created ! "
+echo -e "\nTemplate is created ! "
 
 }
 
@@ -173,6 +173,7 @@ elif [ $baseline = large ] ; then
 else
         exit
 fi
+
 }
 
 temp_erase
@@ -193,9 +194,8 @@ for ((i=1;i<=$nb;i++)); do
 
 domain=$(echo $list | cut -d" " -f $i)
 
-if $(virsh list --all | grep -w "$domain" &> /dev/null)
-then
-        read -p "Domain $domain erasing (y/n) ? " answer
+if $(virsh list --all | grep -w "$domain" &> /dev/null); then
+        read -p "Domain $domain exists. Erasing (y/n) ? " answer
         if [ $answer = 'y' ]
          then
                 /bin/virsh destroy $domain 2> /dev/null
@@ -241,7 +241,7 @@ format=qcow2
 	--file $vol/$domain-$uiddom.$format \
 	--mac $mac
 	# clone domain customizations
-guestfish -a $vol/$domain-$domid.$format -i <<EOF
+guestfish -a $vol/$domain-$uiddom.$format -i <<EOF
 write-append /etc/sysconfig/network-scripts/ifcfg-eth0 "DHCP_HOSTNAME=$domain\nHWADDR=$mac\n"
 write /etc/hostname "$domain\n"
 EOF
