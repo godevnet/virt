@@ -304,10 +304,10 @@ temp_all_erase ()
 {
 
 echo "Destroy, undefine and erase temporary template domains"
-for gi-dom in $(virsh list --name --all | grep gi-.*); do 
-        virsh destroy $gi-dom 2> /dev/null
-        virsh undefine $gi-dom
-        rm -f $vol/$gi-dom*
+for tdom in $(virsh list --name --all | grep gi-.*); do 
+        virsh destroy $tdom 2> /dev/null
+        virsh undefine $tdom
+        rm -f $vol/$tdom*
 done
 
 }
