@@ -1,50 +1,50 @@
 #/bin/bash
 
-# fichier autovm.sh
-## usage : autovm.sh [baseline] "[liste de domaines]"
+## autovm.sh file
+## usage : autovm.sh [baseline] "[domain list]"
 ##         autovm.sh $1 "$2" 
-## Création et installation automatisée Fedora/Centos 7
+## Linux KVM domain automatic deployment Fedora/Centos 7
 ## baseline : small, medium ou large
-## liste : liste de domaines à créer entre " "
+## domain list between " "
 ##
 
-## Variables générales
+## Variables
 baseline=$1
 list=$2
-## $uidtemp : id aléatoire pour le domaine modèle 
+## $uidtemp var : template uid
 uidtemp="gi-$(uuidgen | cut -d - -f 1)"
-## $vol : Emplacement images des disques
+## $vol var : path to domain images
 vol=/var/lib/libvirt/images
-## $www : emplacement physique des fichiers de configuration
+## $www var : local path to template kickstart file
 www=/var/www/html/conf
+## $conf var : http path to template kickstart file 
+conf=http://192.168.122.1/conf
+## $mirror var : http path to an installation mirrot
 mirror=http://192.168.122.1/repo
-## Miroirs publics
+## Public mirrors
 #mirror=http://centos.mirrors.ovh.net/ftp.centos.org/7/os/x86_64
 #mirror=http://ftp.belnet.be/ftp.centos.org/7/os/x86_64
 #mirror=http://mirror.i3d.net/pub/centos/7/os/x86_64
-## $conf : Emplacement HTTP des fichiers Kickstart
-## Serveur Web sur l'hyperviseur (adresse du réseau "Default")
-conf=http://192.168.122.1/conf
-## Nombre de domaines
+## count domain in $list
 nb=$(echo $list | wc -w)
 
 install_info ()
 {
 
-# Affichage des informations
-echo "* Type d'installation : $baseline"
-echo "* $nb domaines : $list"
-echo "* Emplacement des images disques : $vol"
-echo "* Emplacement physique des fichiers de configuration : $www"
+# Show install configuation 
+echo "* Install configuration : $baseline"
+echo "* $nb domains to create : $list"
+echo "* Path to images : $vol"
+echo "* FS path to kickstart file : $www"
+echo "* http path to kickstart file : $conf"
 echo "* Mirroir des fichiers d'installation : $mirror"
-echo "* Serveur des fichiers de configuration : $conf"
 
 }
 
 temp_erase ()
 {
 
-echo "Supression du modèle"
+echo "Erasing template""
 virsh destroy $uidtemp 2> /dev/null
 virsh undefine $uidtemp 2> /dev/null
 rm -f $vol/$uidtemp.*
@@ -58,8 +58,8 @@ temp_create ()
 ks_prep ()
 {
 
-## Préparation du fichier Kickstart
-echo "Préparation du fichier Kickstart @core+clé SSH LV / 4G"
+## Kickstart file preparation
+echo "Kickstart file preparation  @core+SSH key LV 4G"
 
 ##
 touch $www/$uidtemp.ks
@@ -108,10 +108,9 @@ virt_install ()
 installation ()
 {
 
-## Démarrage de l'installation du modèle
-echo "Démarrage de la création du modèle $uidtemp de type \"$baseline\""
-## Installation et lancement silencieux en mode texte
-## selon le profil (baseline) défini dans la variable $baseline
+## Template domain installation start ... 
+echo "Template \"$baseline\" domain installation start for $nb new domains ... ""
+## virt-install process installation via http following kickstart file config
 nohup \
 /bin/virt-install \
 --virt-type kvm \
@@ -128,7 +127,7 @@ nohup \
 -x "ks=$conf/$uidtemp.ks console=ttyS0,115200n8 serial" \
 > /dev/null 2>&1 &
 
-## choix installation cdrom avec Kickstart local
+## cd-rom installation and local kickstart
 #ks=/var/www/html/conf
 #iso=path/to/iso
 #--cdrom $iso \
@@ -146,7 +145,7 @@ break
 fi
 done
 
-echo -e "\nCréation du modèle $uidtemp terminée"
+echo -e "\nTemplate created ! "
 
 }
 
@@ -188,7 +187,7 @@ clone ()
 dom_man ()
 {
 
-# Les domaines existent-ils ?
+# Domains to deploy already present ?
 
 for ((i=1;i<=$nb;i++)); do
 
@@ -196,8 +195,8 @@ domain=$(echo $list | cut -d" " -f $i)
 
 if $(virsh list --all | grep -w "$domain" &> /dev/null)
 then
-        read -p "Ecraser le domaine $domain (o/n) ? " answer
-        if [ $answer = 'o' ]
+        read -p "Domain $domain erasing (y/n) ? " answer
+        if [ $answer = 'y' ]
          then
                 /bin/virsh destroy $domain 2> /dev/null
 		/bin/virsh undefine $domain 2> /dev/null
@@ -227,21 +226,21 @@ virt-sysprep --format=$format -a $vol/$uidtemp.$format &> /dev/null
 cloning ()
 {
 
-# Boucle de clonage
+# cloning loop
 for domain in $list; do
 mac=$(printf '52:54:00:EF:%02X:%02X\n' $((RANDOM%256)) $((RANDOM%256)))
-# Génération d'un uuid
+# uuid generation for domain image
 uiddom=$(uuidgen | cut -d - -f 1)
-# Format de disque
+# image format
 format=qcow2
-	# Clonage
+	# vir-clone operations
 	virt-clone \
 	--connect qemu:///system \
 	--original $uidtemp \
 	--name $domain \
 	--file $vol/$domain-$uiddom.$format \
 	--mac $mac
-	# Personnalisation du clonage
+	# clone domain customizations
 guestfish -a $vol/$domain-$domid.$format -i <<EOF
 write-append /etc/sysconfig/network-scripts/ifcfg-eth0 "DHCP_HOSTNAME=$domain\nHWADDR=$mac\n"
 write /etc/hostname "$domain\n"
@@ -257,7 +256,7 @@ cloning
 
 dom_start ()
 {
-# Démarrage des domaines
+# start domains
 for domain_new in $list; do
 	virsh start $domain_new
 	sleep 5
