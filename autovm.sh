@@ -10,7 +10,7 @@
 ## Variables générales
 baseline=$1
 list=$2
-## $idtemp : id aléatoire pour le domaine modèle 
+## $uidtemp : id aléatoire pour le domaine modèle 
 uidtemp="gi-$(uuidgen | cut -d - -f 1)"
 ## $vol : Emplacement images des disques
 vol=/var/lib/libvirt/images
@@ -60,8 +60,8 @@ ks_prep ()
 echo "Préparation du fichier Kickstart @core+clé SSH LV / 4G"
 
 ##
-touch $www/$idtemp.ks
-cat << EOF > $www/$idtemp.ks 
+touch $www/$uidtemp.ks
+cat << EOF > $www/$uidtemp.ks 
 install
 keyboard --vckeymap=be-oss --xlayouts='be (oss)'
 reboot
@@ -71,7 +71,7 @@ url --url="$mirror"
 lang fr_BE
 firewall --disabled
 network --bootproto=dhcp --device=eth0
-network --hostname=$idtemp
+network --hostname=$uidtemp
 # network --device=eth0 --bootproto=static --ip=192.168.22.10 --netmask 255.255.255.0 --gateway 192.168.22.254 --nameserver=192.168.22.11 --ipv6 auto
 auth  --useshadow  --passalgo=sha512
 text
