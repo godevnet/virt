@@ -1,4 +1,5 @@
 #/bin/bash
+
 # fichier autovm.sh
 ## usage : autovm.sh [baseline] "[liste de domaines]"
 ##         autovm.sh $1 "$2" 
