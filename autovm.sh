@@ -13,14 +13,17 @@ baseline=$1
 list=$2
 ## $uidtemp var : template uid
 uidtemp="gi-$(uuidgen | cut -d - -f 1)"
+## bridge network
+bridge=virbr0
+bridgeip4=$(ip -4 address show $bridge | grep 'inet' | sed 's/.*inet \([0-9\.]\+\).*/\1/')
 ## $vol var : path to domain images
 vol=/var/lib/libvirt/images
 ## $www var : local path to template kickstart file
 www=/var/www/html/conf
 ## $conf var : http path to template kickstart file 
-conf=http://192.168.122.1/conf
+conf=http://$bridgeip4/conf
 ## $mirror var : http path to an installation mirrot
-mirror=http://192.168.122.1/repo
+mirror=http://$bridgeip4/repo
 ## Public mirrors
 #mirror=http://centos.mirrors.ovh.net/ftp.centos.org/7/os/x86_64
 #mirror=http://ftp.belnet.be/ftp.centos.org/7/os/x86_64
@@ -74,7 +77,8 @@ lang fr_BE
 firewall --disabled
 network --bootproto=dhcp --device=eth0
 network --hostname=$uidtemp
-# network --device=eth0 --bootproto=static --ip=192.168.22.10 --netmask 255.255.255.0 --gateway 192.168.22.254 --nameserver=192.168.22.11 --ipv6 auto
+# !!!
+# network --device=eth0 --bootproto=static --ip=192.168.22.10 --netmask 255.255.255.0 --gateway $bridgeip4 --nameserver=$bridgeip4 --ipv6 auto
 auth  --useshadow  --passalgo=sha512
 text
 firstboot --enable
@@ -154,21 +158,18 @@ if [ $baseline = small ] ; then
         format=qcow2
         ram=1024
         vcpus=1
-        bridge=virbr0
     installation
 elif [ $baseline = medium ] ; then
         size=16
         format=qcow2
         ram=2048
         vcpus=2
-        bridge=virbr0
     installation
 elif [ $baseline = large ] ; then
         size=32
         format=qcow2
         ram=4096
         vcpus=4
-        bridge=virbr0
     installation
 else
         exit
@@ -195,7 +196,8 @@ for ((i=1;i<=$nb;i++)); do
 domain=$(echo $list | cut -d" " -f $i)
 
 if $(virsh list --all | grep -w "$domain" &> /dev/null); then
-        read -p "Domain $domain exists. Erasing (y/n) ? " answer
+
+        read -p "$domain domain  exists. Erasing (y/n) ? " answer
         if [ $answer = 'y' ]
          then
                 /bin/virsh destroy $domain 2> /dev/null
