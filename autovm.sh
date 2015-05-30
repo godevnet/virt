@@ -48,6 +48,7 @@ echo "Supression du modèle"
 virsh destroy $uidtemp 2> /dev/null
 virsh undefine $uidtemp 2> /dev/null
 rm -f $vol/$uidtemp.*
+$www/$uidtemp.ks
 
 }
 
