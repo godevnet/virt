@@ -1,15 +1,14 @@
 #/bin/bash
 # fichier autovm.sh
-## usage : autovm.sh [type] "[liste de domaines]"
+## usage : autovm.sh [baseline] "[liste de domaines]"
 ##         autovm.sh $1 "$2" 
 ## Création et installation automatisée Fedora/Centos 7
-## types (profils, baselines): 
-##         small, medium ou large
+## baseline : small, medium ou large
 ## liste : liste de domaines à créer entre " "
 ##
 
 ## Variables générales
-type=$1
+baseline=$1
 list=$2
 ## $temp : id aléatoire pour le domaine modèle 
 temp="gi-$(uuidgen | cut -d - -f 1)"
@@ -32,7 +31,7 @@ install_info ()
 {
 
 # Affichage des informations
-echo "* Type d'installation : $type"
+echo "* Type d'installation : $baseline"
 echo "* $nb domaines : $list"
 echo "* Emplacement des images disques : $vol"
 echo "* Emplacement physique des fichiers de configuration : $www"
@@ -109,9 +108,9 @@ installation ()
 {
 
 ## Démarrage de l'installation du modèle
-echo "Démarrage de la création du modèle $temp de type \"$type\""
+echo "Démarrage de la création du modèle $temp de type \"$baseline\""
 ## Installation et lancement silencieux en mode texte
-## selon le profil (baseline) défini dans la variable $type
+## selon le profil (baseline) défini dans la variable $baseline
 nohup \
 /bin/virt-install \
 --virt-type kvm \
@@ -150,21 +149,21 @@ echo -e "\nCréation du modèle $temp terminée"
 
 }
 
-if [ $type = small ] ; then
+if [ $baseline = small ] ; then
         size=8
         format=qcow2
         ram=1024
         vcpus=1
         bridge=virbr0
     installation
-elif [ $type = medium ] ; then
+elif [ $baseline = medium ] ; then
         size=16
         format=qcow2
         ram=2048
         vcpus=2
         bridge=virbr0
     installation
-elif [ $type = large ] ; then
+elif [ $baseline = large ] ; then
         size=32
         format=qcow2
         ram=4096
