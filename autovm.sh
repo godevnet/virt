@@ -10,8 +10,8 @@
 ## Variables générales
 baseline=$1
 list=$2
-## $temp : id aléatoire pour le domaine modèle 
-temp="gi-$(uuidgen | cut -d - -f 1)"
+## $idtemp : id aléatoire pour le domaine modèle 
+uidtemp="gi-$(uuidgen | cut -d - -f 1)"
 ## $vol : Emplacement images des disques
 vol=/var/lib/libvirt/images
 ## $www : emplacement physique des fichiers de configuration
@@ -40,19 +40,18 @@ echo "* Serveur des fichiers de configuration : $conf"
 
 }
 
-temp_create ()
+temp_erase ()
 {
 
-temp_uni ()
-{
+echo "Supression du modèle"
+virsh destroy $uidtemp 2> /dev/null
+virsh undefine $uidtemp 2> /dev/null
+rm -f $vol/$uidtemp.*
 
-## Le modèle est-il unique ?
-echo "Vérification d'unicité du modèle $temp" 
-/bin/virsh destroy $temp 2> /dev/null
-/bin/virsh undefine $temp 2> /dev/null
-rm -f $vol/$temp.*
 }
 
+temp_create ()
+{
 
 ks_prep ()
 {
@@ -61,8 +60,8 @@ ks_prep ()
 echo "Préparation du fichier Kickstart @core+clé SSH LV / 4G"
 
 ##
-touch $www/$temp.ks
-cat << EOF > $www/$temp.ks 
+touch $www/$idtemp.ks
+cat << EOF > $www/$idtemp.ks 
 install
 keyboard --vckeymap=be-oss --xlayouts='be (oss)'
 reboot
@@ -72,7 +71,7 @@ url --url="$mirror"
 lang fr_BE
 firewall --disabled
 network --bootproto=dhcp --device=eth0
-network --hostname=$temp
+network --hostname=$idtemp
 # network --device=eth0 --bootproto=static --ip=192.168.22.10 --netmask 255.255.255.0 --gateway 192.168.22.254 --nameserver=192.168.22.11 --ipv6 auto
 auth  --useshadow  --passalgo=sha512
 text
@@ -98,7 +97,7 @@ sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_
 %end
 EOF
 
-chown apache:apache $www/$temp.ks
+chown apache:apache $www/$uidtemp.ks
 }
 
 virt_install ()
@@ -108,14 +107,14 @@ installation ()
 {
 
 ## Démarrage de l'installation du modèle
-echo "Démarrage de la création du modèle $temp de type \"$baseline\""
+echo "Démarrage de la création du modèle $uidtemp de type \"$baseline\""
 ## Installation et lancement silencieux en mode texte
 ## selon le profil (baseline) défini dans la variable $baseline
 nohup \
 /bin/virt-install \
 --virt-type kvm \
---name=$temp \
---disk path=$vol/$temp.$format,size=$size,format=$format \
+--name=$uidtemp \
+--disk path=$vol/$uidtemp.$format,size=$size,format=$format \
 --ram=$ram \
 --vcpus=$vcpus \
 --os-variant=rhel7 \
@@ -124,19 +123,19 @@ nohup \
 --noreboot \
 --console pty,target_type=serial \
 --location $mirror \
--x "ks=$conf/$temp.ks console=ttyS0,115200n8 serial" \
+-x "ks=$conf/$uidtemp.ks console=ttyS0,115200n8 serial" \
 > /dev/null 2>&1 &
 
 ## choix installation cdrom avec Kickstart local
 #ks=/var/www/html/conf
 #iso=path/to/iso
 #--cdrom $iso \
-#--initrd-inject=/$temp.ks -x "ks=file:/$temp.ks console=ttyS0,115200n8 serial" \
+#--initrd-inject=/$uidtemp.ks -x "ks=file:/$uidtemp.ks console=ttyS0,115200n8 serial" \
 
 sleep 5
 
 while (true) do
-        check_install=$(virsh list | grep $temp 2> /dev/null)
+        check_install=$(virsh list | grep $uidtemp 2> /dev/null)
 	echo -n "."
 	sleep 3
 
@@ -145,7 +144,7 @@ break
 fi
 done
 
-echo -e "\nCréation du modèle $temp terminée"
+echo -e "\nCréation du modèle $uidtemp terminée"
 
 }
 
@@ -175,7 +174,7 @@ else
 fi
 }
 
-temp_uni
+temp_erase
 ks_prep
 virt_install
 
@@ -220,7 +219,7 @@ done
 sysprep ()
 {
 ## !!!
-virt-sysprep --format=$format -a $vol/$temp.$format &> /dev/null
+virt-sysprep --format=$format -a $vol/$uidtemp.$format &> /dev/null
 }
 
 cloning ()
@@ -230,18 +229,18 @@ cloning ()
 for domain in $list; do
 mac=$(printf '52:54:00:EF:%02X:%02X\n' $((RANDOM%256)) $((RANDOM%256)))
 # Génération d'un uuid
-temp2=$(uuidgen | cut -d - -f 1)
+uiddom=$(uuidgen | cut -d - -f 1)
 # Format de disque
 format=qcow2
 	# Clonage
 	virt-clone \
 	--connect qemu:///system \
-	--original $temp \
+	--original $uidtemp \
 	--name $domain \
-	--file $vol/$domain-$temp2.$format \
+	--file $vol/$domain-$uiddom.$format \
 	--mac $mac
 	# Personnalisation du clonage
-guestfish -a $vol/$domain-$temp2.$format -i <<EOF
+guestfish -a $vol/$domain-$domid.$format -i <<EOF
 write-append /etc/sysconfig/network-scripts/ifcfg-eth0 "DHCP_HOSTNAME=$domain\nHWADDR=$mac\n"
 write /etc/hostname "$domain\n"
 EOF
@@ -252,16 +251,6 @@ done
 dom_man
 sysprep
 cloning
-}
-
-temp_erase ()
-{
-
-echo "Supression du modèle"
-rm -f $www/$temp.ks
-virsh undefine $temp
-rm -f $vol/$temp.*
-
 }
 
 dom_start ()
