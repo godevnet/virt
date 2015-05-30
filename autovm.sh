@@ -22,7 +22,7 @@ uidtemp="gi-$(uuidgen | cut -d - -f 1)"
 
 ## Options to configure (network and paths)
 ## Base scenario with libvirt Default network
-## and local http browser for ks and installation files
+## and local http browser for ks and as repo
 # bridge network
 bridge=virbr0
 bridgeip4=$(ip -4 address show $bridge | grep 'inet' | sed 's/.*inet \([0-9\.]\+\).*/\1/')
@@ -32,7 +32,7 @@ vol=/var/lib/libvirt/images
 www=/var/www/html/conf
 # $conf var : http path to template kickstart file 
 conf=http://$bridgeip4/conf
-# $mirror var : http path to an installation mirrot
+# $mirror var : http path to an installation mirror
 mirror=http://$bridgeip4/repo
 ## Public mirrors
 #mirror=http://centos.mirrors.ovh.net/ftp.centos.org/7/os/x86_64
@@ -45,7 +45,8 @@ mirror=http://$bridgeip4/repo
 ## and the name of your new domains between double quotes as arguments.
 ## 3. Look to your console and please read the logs. 
 ## If the newly created domains already exist, the script ask you what to do with them. 
-## Assume that you have a local http server when you an http kickstart installation
+## Assume that you have a local http server avaible
+## when you choose http kickstart installation
 ##
 ## What the script is doing for you ?
 ## 1. Checking the configuration 
