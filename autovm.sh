@@ -180,7 +180,7 @@ playtemp ()
 {
 ## virt-install process installation via http following kickstart file config
 echo "Template \"$baseline\" domain installation is starting  ... "
-#nohup \
+nohup \
 /bin/virt-install \
 --virt-type kvm \
 --name=$uidtemp \
@@ -194,8 +194,7 @@ echo "Template \"$baseline\" domain installation is starting  ... "
 --console pty,target_type=serial \
 --location $mirror \
 $init \
--x " $extra "  
-#> /dev/null 2>&1 &
+-x " $extra " > /dev/null 2>&1 &
 sleep 5
 while (true) do
         check_install=$(virsh list | grep $uidtemp 2> /dev/null)
@@ -304,7 +303,7 @@ done
 temp_all_erase ()
 {
 
-#vol=/var/lib/libvirt/images
+echo "Destroy, undefine and erase temporary template domains"
 for gi-dom in $(virsh list --name --all | grep gi-.*); do 
         virsh destroy $gi-dom 2> /dev/null
         virsh undefine $gi-dom
@@ -320,7 +319,7 @@ temp_create
 echo $(date +"%M:%S")
 clone
 echo $(date +"%M:%S")
-temp_erase
+temp_all_erase
 echo $(date +"%M:%S")
 dom_start
 echo $(date +"%M:%S")
