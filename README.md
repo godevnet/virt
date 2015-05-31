@@ -33,7 +33,7 @@ Build and give birth to atomic virtual machines to host micro services topologie
 
 Consider that this script is a way to launch virtual instances at the beginning of their life in their development environment. You are present at the delivery of newborn domains in at the maternity hospital. This is the dawn of those IP addressed black boxes. Their life is conditioned by other events : *migration* in production environnement; *configuration management* tools and procedures; configuration, deployment and management of *network micro/services*. **Their life goal is to serve as hosts for micro-services in a virtual infrastructure.** We use it as lab automatic deployment tool. But you can exploit the **VPS use case** or the **SaaS use case**, offering micro-services like remote ssh shell, pre-configured ts/game servers, VoIP, Lamp, Bind/Dhcpd, Wordpress, X2Go, Odoo, node.js, Owncloud, Lime Survey, and many other instances.
 
-The interoperable, the efficient and the versatile linux kernel virtualization technology is working in any scenario. If the code has no limits, lack of imagination, of ressources or in infrastructure design are sources of frustrations.
+Linux kernel virtualization technologies offer interoperable, efficient and versatile solution working in any scenario. If the code has no limits, lack of imagination, of ressources or in infrastructure design are sources of frustrations.
 
 ###  Service offered
 
