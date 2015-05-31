@@ -337,8 +337,6 @@ printf '\nElapsed time: %s\n' $(timer $t)
 
 ## Main program ##
 ## with timer placed here to quick erase ##
-
-
 install_info
 	elapsed
 dom_erase
