@@ -69,6 +69,22 @@ mirror=http://$bridgeip4/repo
 ## Source of this script : practice lab in Linux training classroom with a motived team
 ## and inspired by the tools : https://github.com/fubralimited/CentOS-KVM-Image-Tools
 
+# timer purpose http://www.linuxjournal.com/content/use-date-command-measure-elapsed-time
+# see the stime=$(date '+%s') variable definition in the head of the script
+elapsed ()
+{
+timer ()
+{
+etime=$(date '+%s')
+dt=$((etime - stime))
+ds=$((dt % 60))
+dm=$(((dt / 60) % 60))
+dh=$((dt / 3600))
+printf '%d:%02d:%02d' $dh $dm $ds
+}
+printf '\nElapsed time: %s\n' $(timer $t)
+}
+
 install_info ()
 {
 # Show install configuation 
@@ -311,27 +327,28 @@ done
 dom_start ()
 {
 # start domains
+local domain_new
 for domain_new in $list; do
         virsh start $domain_new
+	# adapt the pause depending number of domain to start
         sleep 5
 done
 }
 
-# timer purpose http://www.linuxjournal.com/content/use-date-command-measure-elapsed-time
-# see the stime=$(date '+%s') variable definition in the head of the script
-elapsed ()
+dom_info ()
 {
-timer ()
-{
-etime=$(date '+%s')
-dt=$((etime - stime))
-ds=$((dt % 60))
-dm=$(((dt / 60) % 60))
-dh=$((dt / 3600))
-printf '%d:%02d:%02d' $dh $dm $ds
+echo "# To be add for $uidtemp build $nb domains"
+for domain_new in $list
+do
+        domipc=$(virsh net-dhcp-leases default | grep $domain_new | awk -F' ' '{print $5}')
+        domip=$(echo ${domipc%/*})
+        domname=$(virsh net-dhcp-leases default | grep $domain_new | awk -F' ' '{print $6}')
+        echo $domip $domname $(ping -c 1 $domip | grep "1 received" | cut -d "," -f 2 | sed s/.*/\[OK\]/)
+
+done
 }
-printf '\nElapsed time: %s\n' $(timer $t)
-}
+
+# vm00 vm01 vm02 vm03 vm04 vm05 vm06 vm07 vm08 vm09 vm0a vm0b vm0c vm0d vm0e vm0f vm00 vm01 vm02 vm03 vm04 vm05 vm06 vm07 vm08 vm09 vm0a vm0b vm0c vm0d vm0e vm0f
 
 ## Main program ##
 ## with timer placed here to quick erase ##
@@ -348,4 +365,4 @@ temp_all_erase
 	elapsed
 dom_start
 	elapsed
-#dom_info
+dom_info
