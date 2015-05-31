@@ -1,4 +1,4 @@
-# Automatic Micro virtual servers deployment with KVM 
+# Automatic micro virtual servers deployment with KVM 
 
 ## Introduction
 
@@ -17,13 +17,14 @@ The main objective is practice and design several scripts and procedures to mana
 * libguestfs
 * Centos 7 dev server
 * swap /temp available space to sparsifying (depending on the size of the original disk, 8GB min). Grow your swap.
+* disk space (around 1 GB min by domain)
 
 ### Performances
 
 Please use :
 
 * HTTP or NFS local repo instead of local iso dvd
-* dedicated network storage pools
+* dedicated network storage pools 
 
 ## autovm.sh
 
