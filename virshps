@@ -1,0 +1,9 @@
+#!/bin/bash
+
+while (true); do 
+#virsh list --all
+ df -h 
+ free -m -h
+ sleep 3
+ clear
+done
