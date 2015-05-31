@@ -19,6 +19,8 @@ list=$3
 nb=$(echo $list | wc -w)
 # $uidtemp var : template uid
 uidtemp="tmp-$(uuidgen | cut -d - -f 1)"
+# start timer variable
+stime=$(date '+%s')
 
 ## Options to configure (network and paths)
 ## Base scenario with libvirt Default network
@@ -249,7 +251,7 @@ else
 fi
 }
 
-sysprep ()
+sysprep_sparsify ()
 {
 echo "Sysprep and disk optimization"
 # sysprep silent, comment '&> /dev/null' for details
@@ -269,7 +271,7 @@ sleep 5
 
 ks_prep
 virt_install
-sysprep
+sysprep_sparsify
 }
 
 clone ()
@@ -317,18 +319,42 @@ for domain_new in $list; do
 done
 }
 
+# timer purpose http://www.linuxjournal.com/content/use-date-command-measure-elapsed-time
+# see the stime=$(date '+%s') variable definition in the head of the script
+elapsed ()
+{
+timer ()
+{
+etime=$(date '+%s')
+dt=$((etime - stime))
+ds=$((dt % 60))
+dm=$(((dt / 60) % 60))
+dh=$((dt / 3600))
+printf '%d:%02d:%02d' $dh $dm $ds
+}
+printf '\nElapsed time: %s\n' $(timer $t)
+}
 
-echo $(date +"%M:%S")
+## Main program ##
+## with timer placed here to quick erase ##
+
+
 install_info
-echo $(date +"%M:%S")
+	elapsed
 dom_erase
-echo $(date +"%M:%S")
+	elapsed
 temp_create
-echo $(date +"%M:%S")
-clone
-echo $(date +"%M:%S")
+	elapsed
+# The 'clone' function call those tree followed sub-functions
+# clone
+ks_prep
+        elapsed
+virt_install
+        elapsed
+sysprep_sparsify
+        elapsed
 temp_all_erase
-echo $(date +"%M:%S")
+	elapsed
 dom_start
-echo $(date +"%M:%S")
+	elapsed
 #dom_info
