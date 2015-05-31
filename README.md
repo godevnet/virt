@@ -27,7 +27,7 @@ Please use :
 
 ## autovm.sh
 
-The starting goal of the `autovm.sh`script is to build and start numerous KVM domains (Centos 7 image) in one optimized, quick and proper way for automation.
+The starting goal of the `autovm.sh` script is to build and start numerous KVM domains (Centos 7 image) in one optimized, quick and proper way for automation.
 
 Build and give birth to atomic virtual machines to host micro services topologies is an other way to read this objective. 
 
