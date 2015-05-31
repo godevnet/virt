@@ -331,7 +331,7 @@ local domain_new
 for domain_new in $list; do
         virsh start $domain_new
 	# adapt the pause depending number of domain to start
-        sleep 5
+        sleep 10 
 done
 }
 
@@ -356,9 +356,9 @@ install_info
 	elapsed
 dom_erase
 	elapsed
+# temp_create call ks_prep, virt_install and sysprep_sparsify
 temp_create
 	elapsed
-# The 'clone' function call those tree sub-functions
 clone
         elapsed
 temp_all_erase
