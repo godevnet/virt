@@ -51,13 +51,13 @@ mirror=http://$bridgeip4/repo
 ## What the script is doing for you ?
 ## 1. Checking the configuration 
 ## 2. Generation of a fresh temporary template via http repo and local or remote ks file
-## 3. Building clones from the template domain
-## 4. Preparing, optimizing, customizing each new virtual disk
+## 3. Building clones from the optimized template domain
+## 4. Preparing and customizing each new virtual disk
 ## 5. Starting and monitoring new domains
 ##
 ## Automation goal ?
 ## This script is used to deploy a numberous of idendial domains 
-## on a libvirtd/libguestfs host. 
+## on a libvirtd/libguestfs host with a "gold image" that you can customize (kickstart). 
 ## 
 ## What are the next goals ?
 ## But the "use case" is followed by some next steps.
@@ -88,11 +88,11 @@ virsh undefine $uidtemp 2> /dev/null
 rm -f $vol/$uidtemp.*
 rm -f $data/$uidtemp.*
 
-# Domains to deploy already present ?
-# Loop to get each new domain name from list in argument : for each domain
-#  if domain name finded in 'virsh list --all' then question
-#      if erasing 'y' then erase the domain
-#      if erasing 'n' then get out from the list
+# Domains to deploy are they already present ?
+# Loop to get each new domain name from the list in argument : for each domain
+#  if domain name finded in 'virsh list --all' then: question
+#      if erasing 'y' then: erase the domain
+#      if erasing 'n' then: get out from the list
 #  if not continue
 for ((i=1;i<=$nb;i++)); do
 domain=$(echo $list | cut -d" " -f $i)
@@ -118,12 +118,12 @@ done
 
 temp_create ()
 {
-# Temporary domain to sysprep and clone
-# 1. ks_prep
-# 2. virt-install
-#   \-configuration
-#    \-installation
-# 3. sysprep
+# Temporary domain to sysprep and sparse
+# 1. ks_prep (kickstart configuration file preparation)
+# 2. virt_install
+#   \-configuration (domain virtual hardware definition)
+#    \-installation (method to read the ks file 'http' or 'local')
+# 3. sysprep (and sparse the disk)
 
 ks_prep ()
 {
@@ -288,20 +288,11 @@ format=qcow2
 	--name $domain \
 	--file $vol/$domain-$uiddom.$format \
 	--mac $mac
-	# clone domain customizations
+	# clone domain customizations : hostname and mac address
 guestfish -a $vol/$domain-$uiddom.$format -i <<EOF
 write-append /etc/sysconfig/network-scripts/ifcfg-eth0 "DHCP_HOSTNAME=$domain\nHWADDR=$mac\n"
 write /etc/hostname "$domain\n"
 EOF
-done
-}
-
-dom_start ()
-{
-# start domains
-for domain_new in $list; do
-	virsh start $domain_new
-	sleep 5
 done
 }
 
@@ -316,6 +307,16 @@ for tdom in $(virsh list --name --all | grep tmp-.*); do
 done
 
 }
+
+dom_start ()
+{
+# start domains
+for domain_new in $list; do
+        virsh start $domain_new
+        sleep 5
+done
+}
+
 
 echo $(date +"%M:%S")
 install_info
