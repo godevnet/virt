@@ -257,9 +257,7 @@ echo "Sysprep and disk optimization"
 # sysprep silent, comment '&> /dev/null' for details
 virt-sysprep --format=$format -a $vol/$uidtemp.$format &> /dev/null
 # make a virtual machine disk sparse
-virt-sparsify --check-tmpdir continue \
---compress --convert qcow2 --format qcow2 \
-$vol/$uidtemp.$format $vol/$uidtemp-sparsified.$format
+virt-sparsify --check-tmpdir=continue --compress --convert qcow2 --format qcow2 $vol/$uidtemp.$format $vol/$uidtemp-sparsified.$format
 # remove original image
 rm -rf $vol/$uidtemp.$format
 # rename sparsified
@@ -343,13 +341,8 @@ dom_erase
 	elapsed
 temp_create
 	elapsed
-# The 'clone' function call those tree followed sub-functions
-# clone
-ks_prep
-        elapsed
-virt_install
-        elapsed
-sysprep_sparsify
+# The 'clone' function call those tree sub-functions
+clone
         elapsed
 temp_all_erase
 	elapsed
