@@ -1,12 +1,12 @@
-# virt
+# Automatic micro virtual servers deployment with KVM 
 
 ## Introduction
 
-This project is born from the lecture of [CentOS-KVM-Image-Tools](https://github.com/fubralimited/CentOS-KVM-Image-Tools). 
-
-### Objective
+The source of this project is located on https://github.com/kerberis/virt. This project is inspired from the lecture of [CentOS-KVM-Image-Tools](https://github.com/fubralimited/CentOS-KVM-Image-Tools).
 
 We use this to illustrate virtualization concepts and practice in Linux training classrooms. 
+
+### Objective
 
 The main objective is practice and design several scripts and procedures to manage virtual infrastructure using KVM, Xen, LXC, Docker technologies or other open source projects around the *cloud paradigm*. *Automation* is an other main objective.
 
@@ -16,14 +16,16 @@ The main objective is practice and design several scripts and procedures to mana
 * libvirt
 * libguestfs
 * Centos 7 dev server
-* /tmp available space to sparsifying (depending on the size of the original disk, 8GB min)
+* swap /temp available space to sparsifying (depending on the size of the original disk, 8GB min). Grow your swap.
+* disk space (around 1 GB min by domain)
+* some compute ressource
 
 ### Performances
 
 Please use :
 
 * HTTP or NFS local repo instead of local iso dvd
-* dedicated network storage pools
+* dedicated network storage pools 
 
 ## autovm.sh
 
@@ -95,11 +97,12 @@ You are invited to specify three arguments after the command. You must choose or
 
 ### Wished corrections
 
-* A way to disable interaction with users (interactive=on/off)
+* A way to disable interaction with users (interactive=on/off), set a variable and condition
 * Problem procedure to exit the program with informations display.
 * Test : check erroneous arguments
 * After template creation, verify the good starting of the image (function alive).
-Without this feature, if the template building fail for any reason, it try to continue but it do not find anything to clone. Alive with :
+Without this feature, if the template building fail for any reason, it try to continue but it do not find anything to clone. 
+* Alive reporting with kind of :
     1. wait 30
     * grep $uuid in virsh net-dhcp-leases
     * get $ipadd of the guest template
@@ -107,10 +110,40 @@ Without this feature, if the template building fail for any reason, it try to co
         * --> if responding, continue
         * --> if not wait 30  
     * continue
-* Limitation of simultaneous domain starting and reporting.
-* define the network bridge as dns forwarder for the host `/etc/resolv.conf`, write the NS resolution of the new guests in `/etc/hosts` file on the hypervisor, print the Ansible inventory.
+* Get the name and the ip add of the new guests.
+    * Domain alive reporting.
+    * Define the network bridge as dns forwarder for the host `/etc/resolv.conf`, 
+    * write the NS resolution of the new guests in `/etc/hosts` file on the hypervisor, 
+    * print the Ansible inventory.
+* Automatic process to reserve and configure network ressources (OpenVSwitch instead of libvirt).
+
+
+### Source code
+
+Located on https://github.com/kerberis/virt/blob/master/autovm.sh .
+
+### Monitoring process
+
+You can use `virt-top` or this line `df -h; while (true); do virsh list --all; sleep 3; clear; done; df -h` to monitor the process. You can see your memory and disk usage with this command.
+
+### Metrics
+
+Create and start 32 domains on KVM Hypervisor.
+
+You need at least 32 GB free disk space for this test, but more is better. You can also grow your swap
+
+Timing
+
+* 0:00:00 : erase existing domains
+* 0:04:54 : template created
+* 0:15:38 : 32 domains created
+* 0:15:38 : template erased
+* 0:18:32 : 32 domains started
+
+In resume, around 5 minutes to build a minimal template with a local repo, 10 minutes 30 seconds to build 32 domains (20 seconds by domain) and 3 minutes to start them (6 seconds by domain). 
 
 ## others
 
-* *x`virsh`* domain list as argument.
+* *`virsh`* domain list as argument
+* `virshps`instead of virt-top
 * add live new NIC and sparsed storage
