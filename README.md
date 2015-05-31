@@ -18,6 +18,7 @@ The main objective is practice and design several scripts and procedures to mana
 * Centos 7 dev server
 * swap /temp available space to sparsifying (depending on the size of the original disk, 8GB min). Grow your swap.
 * disk space (around 1 GB min by domain)
+* some compute ressource
 
 ### Performances
 
@@ -96,11 +97,12 @@ You are invited to specify three arguments after the command. You must choose or
 
 ### Wished corrections
 
-* A way to disable interaction with users (interactive=on/off)
+* A way to disable interaction with users (interactive=on/off), set a variable and condition
 * Problem procedure to exit the program with informations display.
 * Test : check erroneous arguments
 * After template creation, verify the good starting of the image (function alive).
-Without this feature, if the template building fail for any reason, it try to continue but it do not find anything to clone. Alive with :
+Without this feature, if the template building fail for any reason, it try to continue but it do not find anything to clone. 
+* Alive reporting with kind of :
     1. wait 30
     * grep $uuid in virsh net-dhcp-leases
     * get $ipadd of the guest template
@@ -108,8 +110,13 @@ Without this feature, if the template building fail for any reason, it try to co
         * --> if responding, continue
         * --> if not wait 30  
     * continue
-* Limitation of simultaneous domain starting and reporting.
-* define the network bridge as dns forwarder for the host `/etc/resolv.conf`, write the NS resolution of the new guests in `/etc/hosts` file on the hypervisor, print the Ansible inventory.
+* Get the name and the ip add of the new guests.
+    * Domain alive reporting.
+    * Define the network bridge as dns forwarder for the host `/etc/resolv.conf`, 
+    * write the NS resolution of the new guests in `/etc/hosts` file on the hypervisor, 
+    * print the Ansible inventory.
+* Automatic process to reserve and configure network ressources (OpenVSwitch instead of libvirt).
+
 
 ### Source code
 
@@ -138,5 +145,5 @@ In resume, around 5 minutes to build a minimal template with a local repo, 10 mi
 ## others
 
 * *`virsh`* domain list as argument
-* * `virshps`instead of virt-top
+* `virshps`instead of virt-top
 * add live new NIC and sparsed storage
