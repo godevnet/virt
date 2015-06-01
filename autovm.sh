@@ -21,6 +21,7 @@ nb=$(echo $list | wc -w)
 uidtemp="tmp-$(uuidgen | cut -d - -f 1)"
 # start timer variable
 stime=$(date '+%s')
+# list="vm00 vm01 vm02 vm03 vm04 vm05 vm06 vm07 vm08 vm09 vm0a vm0b vm0c vm0d vm0e vm0f vm10 vm11 vm12 vm13 vm14 vm15 vm16 vm17 vm18 vm19 vm1a vm1b vm1c vm1d vm1e vm1f"
 
 ## Options to configure (network and paths)
 ## Base scenario with libvirt Default network
@@ -117,7 +118,7 @@ domain=$(echo $list | cut -d" " -f $i)
 if $(virsh list --all | grep -w "$domain" &> /dev/null); then
         read -p "$domain domain  exists. Erasing (y/n) ? " answer
         if [ $answer = 'y' ]
-         then
+	 then
                 /bin/virsh destroy $domain 2> /dev/null
                 /bin/virsh undefine $domain 2> /dev/null
                 rm -f $vol/$domain*
@@ -343,12 +344,10 @@ do
         domipc=$(virsh net-dhcp-leases default | grep $domain_new | awk -F' ' '{print $5}')
         domip=$(echo ${domipc%/*})
         domname=$(virsh net-dhcp-leases default | grep $domain_new | awk -F' ' '{print $6}')
-        echo $domip $domname $(ping -c 1 $domip | grep "1 received" | cut -d "," -f 2 | sed s/.*/\[OK\]/)
+        echo $domip $domname #$(ping -c 1 $domip | grep "1 received" | cut -d "," -f 2 | sed s/.*/\[OK\]/)
 
 done
 }
-
-# vm00 vm01 vm02 vm03 vm04 vm05 vm06 vm07 vm08 vm09 vm0a vm0b vm0c vm0d vm0e vm0f vm00 vm01 vm02 vm03 vm04 vm05 vm06 vm07 vm08 vm09 vm0a vm0b vm0c vm0d vm0e vm0f
 
 ## Main program ##
 ## with timer placed here to quick erase ##
