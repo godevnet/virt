@@ -25,7 +25,7 @@ stime=$(date '+%s')
 
 ## Options to configure (network and paths)
 ## Base scenario with libvirt Default network
-## and local http browser for ks and as repo
+## and local http server for ks and as repo
 # bridge network
 bridge=virbr0
 bridgeip4=$(ip -4 address show $bridge | grep 'inet' | sed 's/.*inet \([0-9\.]\+\).*/\1/')
@@ -328,8 +328,7 @@ done
 dom_start ()
 {
 # start domains
-local domc=$(virsh list --all --name)
-for domn in $(echo "$domc"); do
+for domn in $list; do
 	virsh start $domn
         sleep 10
 done
@@ -338,7 +337,7 @@ done
 dom_info ()
 {
 echo "# To be add to dns resolver for $uidtemp build $nb domains"
-local domc=$(virsh list --all --name)
+local domc=$list
 for domn in $(echo "$domc"); do 
 	domipc=$(virsh net-dhcp-leases default | grep $domn | awk -F' ' '{print $5}')
         domip=$(echo ${domipc%/*})
