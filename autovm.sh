@@ -328,24 +328,22 @@ done
 dom_start ()
 {
 # start domains
-local domain_new
-for domain_new in $list; do
-        virsh start $domain_new
-	# adapt the pause depending number of domain to start
-        sleep 10 
+local domc=$(virsh list --all --name)
+for domn in $(echo "$domc"); do
+	virsh start $domn
+        sleep 10
 done
 }
 
 dom_info ()
 {
-echo "# To be add for $uidtemp build $nb domains"
-for domain_new in $list
-do
-        domipc=$(virsh net-dhcp-leases default | grep $domain_new | awk -F' ' '{print $5}')
+echo "# To be add to dns resolver for $uidtemp build $nb domains"
+local domc=$(virsh list --all --name)
+for domn in $(echo "$domc"); do 
+	domipc=$(virsh net-dhcp-leases default | grep $domn | awk -F' ' '{print $5}')
         domip=$(echo ${domipc%/*})
-        domname=$(virsh net-dhcp-leases default | grep $domain_new | awk -F' ' '{print $6}')
-        echo $domip $domname #$(ping -c 1 $domip | grep "1 received" | cut -d "," -f 2 | sed s/.*/\[OK\]/)
-
+        echo -e "\n${domn}\n"
+        echo $(ping -c 1 $domip 2> /dev/null | head -n 2)
 done
 }
 
