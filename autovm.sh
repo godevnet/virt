@@ -119,8 +119,8 @@ if $(virsh list --all | grep -w "$domain" &> /dev/null); then
         read -p "$domain domain  exists. Erasing (y/n) ? " answer
         if [ $answer = 'y' ]
 	 then
-                /bin/virsh destroy $domain 2> /dev/null
-                /bin/virsh undefine $domain 2> /dev/null
+                virsh destroy $domain 2> /dev/null
+                virsh undefine $domain 2> /dev/null
                 rm -f $vol/$domain*
         elif [ $answer = 'n' ]
          then
@@ -187,12 +187,12 @@ $packages
 %post
 #yum -y update
 mkdir /root/.ssh
-curl $conf/id_rsa.pub > /root/.ssh/authorized_keys
+curl ${conf}/id_rsa.pub > /root/.ssh/authorized_keys
 sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config
 %end
 EOF
 
-chown apache:apache $data/$uidtemp.ks
+chown apache:apache $data/$uidtemp.ks || chown www-data:www-data $data/$uidtemp.ks
 }
 
 virt_install ()
@@ -204,8 +204,8 @@ installation ()
 ## virt-install process installation via http following kickstart file config
 echo "Template \"$baseline\" domain installation is starting  ... "
 echo "virsh console $uidtemp - in an other terminal to see the installation log"
-nohup \
-/bin/virt-install \
+#nohup \
+virt-install \
 --virt-type kvm \
 --name=$uidtemp \
 --disk path=$vol/$uidtemp.$format,size=$size,format=$format \
@@ -218,7 +218,7 @@ nohup \
 --console pty,target_type=serial \
 --location $mirror \
 $init \
--x " $extra " > /dev/null 2>&1 &
+-x " $extra " #> /dev/null 2>&1 &
 sleep 5
 while (true) do
         check_install=$(virsh list | grep $uidtemp 2> /dev/null)
@@ -237,8 +237,8 @@ if [ $method = http ] ; then
 	init=""
 	installation
 elif [ $method = local ] ; then
-	extra="ks=$conf/$uidtemp.ks console=ttyS0,115200n8 serial"
-	init="--initrd-inject=/"$data/$uidtemp.ks
+	extra="ks=file:/$uidtemp.ks console=ttyS0,115200n8 serial"
+	init="--initrd-inject="$data/$uidtemp.ks
 	installation
 else
         exit
@@ -246,13 +246,13 @@ fi
 }
 
 if [ $baseline = small ] ; then
-      	size=8
+      	size=12
        	format=qcow2
 	ram=1024
         vcpus=1
 	configuration
 elif [ $baseline = medium ] ; then
-        size=16
+        size=24
         format=qcow2
         ram=2048
         vcpus=2
@@ -274,7 +274,8 @@ echo "Sysprep and disk optimization"
 # sysprep silent, comment '&> /dev/null' for details
 virt-sysprep --format=$format -a $vol/$uidtemp.$format &> /dev/null
 # make a virtual machine disk sparse
-virt-sparsify --check-tmpdir=continue --compress --convert qcow2 --format qcow2 $vol/$uidtemp.$format $vol/$uidtemp-sparsified.$format
+#virt-sparsify --check-tmpdir=continue --compress --convert qcow2 --format qcow2 $vol/$uidtemp.$format $vol/$uidtemp-sparsified.$format
+virt-sparsify --compress --convert qcow2 --format qcow2 $vol/$uidtemp.$format $vol/$uidtemp-sparsified.$format
 # remove original image
 rm -rf $vol/$uidtemp.$format
 # rename sparsified
